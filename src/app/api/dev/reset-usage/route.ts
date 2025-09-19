@@ -14,6 +14,6 @@ function getRequesterKey(): string | null {
 export async function GET() {
   const rk = getRequesterKey();
   if (!rk) return NextResponse.json({ ok: false, error: "no requesterKey" }, { status: 400 });
-  await prisma.usage.deleteMany({ where: { requesterKey: rk } });
+await prisma.usage.deleteMany({});
   return NextResponse.json({ ok: true, clearedFor: rk });
 }
