@@ -21,6 +21,9 @@ type AnalyzeResult = {
   coverLetter: string;
 };
 
+// Piano “valido” lato UI
+type Plan = 'free' | 'pro' | 'business' | 'business_plus';
+
 const BUSINESS_PLUS_SOLD_OUT = true;
 
 function prettyError(msg: string) {
@@ -36,11 +39,11 @@ export default function Page() {
   const [loading, setLoading] = useState(false);
   const [loadingExport, setLoadingExport] = useState<null | 'pdf' | 'docx'>(null);
   const [loadingCheckout, setLoadingCheckout] =
-    useState<null | 'pro' | 'business' | 'business_plus'>(null);
+    useState<null | Plan>('pro');
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalyzeResult | null>(null);
   const [remaining, setRemaining] = useState<number | 'infinite' | null>(null);
-  const [plan, setPlan] = useState<'free' | 'pro' | 'business' | 'business_plus' | null>(null);
+  const [plan, setPlan] = useState<Plan | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Nuovo: modalità d’uso (verde/viola)
@@ -57,7 +60,8 @@ export default function Page() {
       try {
         const r = await fetch('/api/auth/me', { cache: 'no-store' });
         const j = await r.json();
-        setPlan(j?.plan ?? 'free');
+        // j.plan può essere unknown → lo forziamo al nostro tipo Plan
+        setPlan((j?.plan as Plan) ?? 'free');
       } catch {
         setPlan('free');
       }
@@ -84,7 +88,8 @@ export default function Page() {
       if (!res.ok) throw new Error(prettyError(data?.error || 'Errore analisi'));
       setResult(data as AnalyzeResult);
       setRemaining(data?.remaining ?? null);
-      setPlan(data?.plan ?? plan ?? null);
+      // idem: data.plan potrebbe essere unknown
+      setPlan((data?.plan as Plan) ?? plan ?? null);
       setRefreshKey((k) => k + 1);
     } catch (e: any) {
       setError(prettyError(e.message || 'Errore analisi'));
@@ -126,7 +131,7 @@ export default function Page() {
     } finally { setLoadingExport(null); }
   }
 
-  async function checkout(tier: 'pro' | 'business' | 'business_plus') {
+  async function checkout(tier: Plan) {
     if (BUSINESS_PLUS_SOLD_OUT && tier === 'business_plus') {
       setError('Business+ è attualmente esaurito. Torna presto!');
       return;
@@ -164,7 +169,8 @@ export default function Page() {
             <PlanPill plan={plan} />
           </div>
           <HeaderAuth onAuthChange={({ me }) => {
-            setPlan(me.plan);
+            // me.plan potrebbe essere unknown → lo castiamo a Plan
+            setPlan((me?.plan as Plan) ?? 'free');
             setRemaining(null);
             setRefreshKey((k) => k + 1);
           }} />
