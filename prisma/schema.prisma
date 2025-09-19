@@ -9,6 +9,7 @@ datasource db {
 }
 
 model Usage {
+requestKey String? @db.Text
   id        Int      @id @default(autoincrement())
   day       String?                 // ← reso nullable per evitare errori di migrazione
   count     Int      @default(0)

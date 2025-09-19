@@ -1,0 +1,9 @@
+{
+  "/api/checkout/sessions": "pages/api/checkout/sessions.js",
+  "/api/export/docx": "pages/api/export/docx.js",
+  "/_error": "pages/_error.js",
+  "/_app": "pages/_app.js",
+  "/api/export/pdf": "pages/api/export/pdf.js",
+  "/api/stripe/portal": "pages/api/stripe/portal.js",
+  "/_document": "pages/_document.js"
+}

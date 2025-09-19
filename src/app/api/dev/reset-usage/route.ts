@@ -2,9 +2,19 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
-// Prisma singleton per evitare troppe connessioni in dev
-const prisma = globalThis.prisma || new PrismaClient();
-if (process.env.NODE_ENV !== "production") (globalThis as any).prisma = prisma;
+// Prisma richiede runtime Node.js (non Edge)
+export const runtime = "nodejs";
+
+// ---- Prisma singleton tipato (evita troppe connessioni in dev) ----
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+const prisma = globalForPrisma.prisma ?? new PrismaClient();
+
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+}
 
 type JsonBody = { requestKey?: string };
 
@@ -18,7 +28,7 @@ export async function POST(req: Request) {
           { ok: false, error: "unauthorized" },
           { status: 401 }
         );
-      }
+        }
     }
 
     // --- prendo requestKey da body / header / query ---
@@ -35,16 +45,9 @@ export async function POST(req: Request) {
     const requestKey = body?.requestKey ?? rkFromHeader ?? rkFromQuery;
 
     // --- cancellazione ---
-    let result;
-    if (requestKey) {
-      // cancello solo le righe con quella chiave
-      result = await prisma.usage.deleteMany({
-        where: { requestKey },
-      });
-    } else {
-      // nessuna chiave → pulizia totale (utile in dev / reset completo)
-      result = await prisma.usage.deleteMany({});
-    }
+    const result = requestKey
+      ? await prisma.usage.deleteMany({ where: { requestKey } })
+      : await prisma.usage.deleteMany({});
 
     return NextResponse.json({
       ok: true,
