@@ -21,6 +21,54 @@ type AnalyzeResult = {
   coverLetter: string;
 };
 
+function normalizeText(t: string) {
+  return (t || '').replace(/\r\n/g, '\n').trim();
+}
+
+function sampleTextCandidate() {
+  return `ANDREA VERDI
+Full-Stack Developer | Milano
+Email: andrea.verdi@mail.com | GitHub: github.com/andreaverdi | LinkedIn: linkedin.com/in/andreaverdi
+
+ESPERIENZA
+Senior Full-Stack Dev – FinTech Spa (2021–oggi)
+- Next.js 14, Node.js, PostgreSQL (Neon), Prisma, Redis
+- Stripe billing, webhooks, ruoli e permessi granulari
+- Test end-to-end (Playwright), CI/CD Vercel
+- Riduzione tempi build del 35%, costi infra -28%
+
+Full-Stack Dev – Logistica SRL (2018–2021)
+- React/Node, ottimizzazione picking, reportistica real-time
+- Migrazione monolite → microservizi
+
+COMPETENZE
+- Frontend: Next.js/React, TypeScript, Tailwind, Framer Motion
+- Backend: Node.js, Prisma, PostgreSQL, Redis
+- Cloud/DevOps: Vercel, Docker, GitHub Actions
+- Pagamenti: Stripe (Checkout, Portal, Webhook)
+- Analytics/Monitoraggio: PostHog, Sentry
+
+FORMAZIONE
+- Laurea in Informatica – Politecnico di Milano
+`;
+}
+
+function sampleTextJD() {
+  return `Senior Full-Stack Developer (FinTech) – Milano (Ibrido)
+Responsabilità:
+- Sviluppo prodotto con Next.js 14 (App Router), TypeScript, Tailwind
+- Integrazione Stripe (checkout, portal, webhook)
+- DB: PostgreSQL (Neon) + Prisma; caching Redis
+- CI/CD con Vercel, test E2E
+
+Requisiti:
+- 4+ anni in Next.js/React e Node
+- Esperienza reale con Stripe e webhook
+- Conoscenza di Prisma e PostgreSQL
+- Performance, sicurezza, best practice
+`;
+}
+
 const BUSINESS_PLUS_SOLD_OUT = true;
 
 function prettyError(msg: string) {
@@ -51,24 +99,49 @@ export default function Page() {
     ? { accent: 'text-emerald-600', btn: 'bg-emerald-600 hover:bg-emerald-700', ring: 'focus:ring-emerald-500' }
     : { accent: 'text-indigo-600',  btn: 'bg-indigo-600 hover:bg-indigo-700',  ring: 'focus:ring-indigo-500' };
 
-  // carica il piano all’avvio
   useEffect(() => {
-    (async () => {
-      try {
-        const r = await fetch('/api/auth/me', { cache: 'no-store' });
-        const j = await r.json();
-        setPlan(j?.plan ?? 'free');
-      } catch {
-        setPlan('free');
-      }
-    })();
+    // prefill demo
+    setResume(sampleTextCandidate());
+    setJd(sampleTextJD());
   }, []);
 
-  async function analyze() {
-    setError(null);
-    if (!resume || !jd) { setError('Inserisci entrambi i campi.'); return; }
-    setLoading(true);
+  async function exportDoc(kind: 'pdf' | 'docx') {
     try {
+      setLoadingExport(kind);
+      setError(null);
+
+      const res = await fetch(`/api/export/${kind}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          resume: normalizeText(resume),
+          jobDescription: normalizeText(jd),
+          result,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || `Errore export ${kind.toUpperCase()}`);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cvboost-${kind}.${kind}`;
+      a.click();
+    } catch (e: any) {
+      setError(prettyError(e.message || 'Errore export'));
+    } finally {
+      setLoadingExport(null);
+    }
+  }
+
+  async function analyze() {
+    try {
+      setLoading(true);
+      setError(null);
+      setResult(null);
+
       // Mapping in base alla modalità:
       const body =
         mode === 'candidate'
@@ -82,81 +155,41 @@ export default function Page() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(prettyError(data?.error || 'Errore analisi'));
+
       setResult(data as AnalyzeResult);
-      setRemaining(data?.remaining ?? null);
-      setPlan(data?.plan ?? plan ?? null);
-      setRefreshKey((k) => k + 1);
+      setRemaining((data?.remaining ?? null) as any); // server restituisce numero o 'infinite'
     } catch (e: any) {
       setError(prettyError(e.message || 'Errore analisi'));
-      setRefreshKey((k) => k + 1);
-    } finally { setLoading(false); }
-  }
-
-  async function exportFile(kind: 'pdf' | 'docx') {
-    if (!result) { setError('Esegui prima una analisi.'); return; }
-    setLoadingExport(kind);
-    try {
-      const res = await fetch(`/api/export/${kind}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          resumeImproved: result.improvedResume,
-          coverLetter: result.coverLetter,
-          score: result.score,
-          missingKeywords: result.missingKeywords,
-          suggestions: result.suggestions,
-          locale: 'it',
-        }),
-      });
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        throw new Error(prettyError(d?.error || 'Export failed'));
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = kind === 'pdf' ? 'CVBoost-report.pdf' : 'CVBoost-report.docx';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch (e: any) {
-      setError(prettyError(e.message || 'Errore export'));
-    } finally { setLoadingExport(null); }
-  }
-
-  async function checkout(tier: 'pro' | 'business' | 'business_plus') {
-    if (BUSINESS_PLUS_SOLD_OUT && tier === 'business_plus') {
-      setError('Business+ è attualmente esaurito. Torna presto!');
-      return;
+    } finally {
+      setLoading(false);
     }
-    setLoadingCheckout(tier);
+  }
+
+  async function buyPlan(tier: 'pro' | 'business' | 'business_plus') {
     try {
-      const res = await fetch('/api/checkout/sessions', {
+      setLoadingCheckout(tier);
+      setError(null);
+      const r = await fetch('/api/checkout/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tier,
-          successUrl: typeof window !== 'undefined'
-            ? window.location.origin + '/?checkout=success' : undefined,
-          cancelUrl: typeof window !== 'undefined'
-            ? window.location.href : undefined,
-        }),
+        body: JSON.stringify({ priceTier: tier }),
       });
-      const data = await res.json();
-      if (!data?.url) throw new Error('Checkout non disponibile');
-      window.location.href = data.url as string;
+      const j = await r.json();
+      if (!r.ok || !j?.url) throw new Error(j?.error || 'Errore checkout');
+      window.location.href = j.url as string;
     } catch (e: any) {
-      setError(prettyError(e.message || 'Errore checkout'));
-    } finally { setLoadingCheckout(null); }
+      setError(e.message || 'Errore checkout');
+      setLoadingCheckout(null);
+    }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      {/* HEADER (UsageCounter rimane invariato: restanti + reset) */}
-      <header className="relative bg-white border-b">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-neutral-950 text-white">
+      <MouseGlow />
+
+      {/* HEADER */}
+      <header className="sticky top-0 z-30 bg-neutral-950/80 backdrop-blur border-b border-white/10">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="font-extrabold text-xl">
               CVBoost<span className={theme.accent}>.ai</span>
@@ -164,7 +197,7 @@ export default function Page() {
             <PlanPill plan={plan} />
           </div>
           <HeaderAuth onAuthChange={({ me }) => {
-            setPlan(me.plan);
+            setPlan(me.plan === 'unknown' ? 'free' : (me.plan as 'free' | 'pro' | 'business' | 'business_plus'));
             setRemaining(null);
             setRefreshKey((k) => k + 1);
           }} />
@@ -179,169 +212,153 @@ export default function Page() {
       <main className="max-w-5xl mx-auto px-4 py-8">
         {/* Titolo + switch a pillola */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-          <motion.h1
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-3xl md:text-4xl font-bold"
-          >
-            Ottimizza il tuo <span className={theme.accent}>CV</span> per gli ATS in 60 secondi
-          </motion.h1>
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
+            Ottimizza il tuo <span className={theme.accent}>CV</span> contro la <span className={theme.accent}>Job Description</span>
+          </h1>
 
-          {/* Switch centrato e allineato */}
-          <div className="flex justify-center md:justify-end">
-            <RoleSwitch mode={mode} onChange={setMode} />
+          <RoleSwitch mode={mode} onChange={setMode} />
+        </div>
+
+        <LandingPitch themeAccent={theme.accent} />
+
+        {/* Input area */}
+        <div className="grid md:grid-cols-2 gap-6 mt-6">
+          {/* Colonna 1 */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-semibold opacity-90">
+                {mode === 'candidate' ? 'Il tuo CV (incolla testo)' : 'Job Description (incolla testo)'}
+              </label>
+              <button
+                className={`text-xs underline opacity-80 hover:opacity-100 ${theme.accent}`}
+                onClick={() => setResume(sampleTextCandidate())}
+              >
+                Carica esempio CV
+              </button>
+            </div>
+            <textarea
+              value={resume}
+              onChange={(e) => setResume(e.target.value)}
+              rows={16}
+              className={`w-full rounded-xl bg-neutral-900 border border-white/10 p-3 outline-none focus:ring-2 ${theme.ring}`}
+              placeholder="Incolla qui il tuo CV in testo"
+            />
+          </div>
+
+          {/* Colonna 2 */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-semibold opacity-90">
+                {mode === 'candidate' ? 'Job Description (incolla testo)' : 'Il tuo CV (incolla testo)'}
+              </label>
+              <button
+                className={`text-xs underline opacity-80 hover:opacity-100 ${theme.accent}`}
+                onClick={() => setJd(sampleTextJD())}
+              >
+                Carica esempio JD
+              </button>
+            </div>
+            <textarea
+              value={jd}
+              onChange={(e) => setJd(e.target.value)}
+              rows={16}
+              className={`w-full rounded-xl bg-neutral-900 border border-white/10 p-3 outline-none focus:ring-2 ${theme.ring}`}
+              placeholder="Incolla qui la Job Description in testo"
+            />
           </div>
         </div>
 
-        <p className="text-gray-600 mb-8 max-w-3xl">
-          {mode === 'candidate' ? (
-            <>Se stai <b>cercando lavoro</b>, incolla il tuo CV a sinistra e la Job Description a destra. Otterrai
-            <span className="font-semibold"> punteggio</span>,
-            <span className="font-semibold"> keyword mancanti</span>,
-            <span className="font-semibold"> CV riscritto</span> e cover letter.</>
-          ) : (
-            <>Se sei un <b>recruiter</b>, incolla l’<b>annuncio/descrizione del ruolo</b> a sinistra e, a destra,
-            un <b>CV di riferimento</b> (opzionale) o i requisiti chiave. Lo screening ATS confronterà i due testi.</>
-          )}
-        </p>
+        {/* Azioni */}
+        <div className="flex items-center gap-3 mt-4">
+          <button
+            onClick={analyze}
+            disabled={loading}
+            className={`px-4 py-2 rounded-xl font-bold ${theme.btn} disabled:opacity-60`}
+          >
+            {loading ? 'Analisi in corso…' : 'Analizza'}
+          </button>
 
-        {/* Sezione editor con glow che segue il cursore */}
-        <MouseGlow mode={mode}>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-white rounded-2xl shadow p-4 border">
-              <label className="block text-sm font-semibold mb-2">
-                {mode === 'candidate' ? 'CV (testo) — per chi cerca lavoro' : 'Annuncio / Descrizione Ruolo — per recruiter'}
-              </label>
-              <textarea
-                className={`w-full h-56 p-3 border rounded-xl focus:outline-none focus:ring-2 ${theme.ring}`}
-                placeholder={mode === 'candidate'
-                  ? 'Incolla qui il tuo CV in testo…'
-                  : 'Incolla qui il testo dell’annuncio/ruolo…'}
-                value={resume}
-                onChange={(e) => setResume(e.target.value)}
-              />
-              <div className="text-xs text-gray-500 mt-2">
-                {mode === 'candidate'
-                  ? 'Suggerimento: includi risultati numerici (%, €, tempo) per aumentare il punteggio.'
-                  : 'Suggerimento: specifica seniority, stack tecnologico, soft skills e must-have.'}
-              </div>
-            </div>
+          <button
+            onClick={() => exportDoc('pdf')}
+            disabled={!result || !!loadingExport}
+            className="px-3 py-2 rounded-xl font-bold bg-neutral-800 hover:bg-neutral-700 disabled:opacity-60"
+          >
+            {loadingExport === 'pdf' ? 'Esporto PDF…' : 'Esporta PDF'}
+          </button>
 
-            <div className="bg-white rounded-2xl shadow p-4 border">
-              <label className="block text-sm font-semibold mb-2">
-                {mode === 'candidate' ? 'Job Description' : 'CV di riferimento / Requisiti chiave'}
-              </label>
-              <textarea
-                className={`w-full h-56 p-3 border rounded-xl focus:outline-none focus:ring-2 ${theme.ring}`}
-                placeholder={mode === 'candidate'
-                  ? 'Incolla la JD del ruolo…'
-                  : 'Incolla un CV di riferimento o elenca i requisiti chiave…'}
-                value={jd}
-                onChange={(e) => setJd(e.target.value)}
-              />
-              <div className="text-xs text-gray-500 mt-2">
-                {mode === 'candidate'
-                  ? 'La JD viene confrontata con il tuo CV per identificare gap e suggerimenti.'
-                  : 'Se non hai un CV di riferimento, scrivi le competenze “ideali” per il ruolo.'}
-              </div>
-            </div>
-          </div>
+          <button
+            onClick={() => exportDoc('docx')}
+            disabled={!result || !!loadingExport}
+            className="px-3 py-2 rounded-xl font-bold bg-neutral-800 hover:bg-neutral-700 disabled:opacity-60"
+          >
+            {loadingExport === 'docx' ? 'Esporto DOCX…' : 'Esporta DOCX'}
+          </button>
+        </div>
 
-          <div className="mt-4 flex items-center gap-3">
-            <button
-              onClick={analyze}
-              disabled={loading}
-              className={`px-5 py-3 rounded-xl text-white font-semibold shadow hover:shadow-md disabled:opacity-60 ${theme.btn}`}
-            >
-              {loading ? 'Analisi in corso…' : (mode === 'candidate' ? 'Analizza CV' : 'Analizza annuncio')}
-            </button>
-
-            {plan !== 'business' && plan !== 'business_plus' && (
-              <span className="text-sm text-gray-500">
-                Gratis 3 Analisi • Passa a Pro: 50 Analisi Mensili • Passa a Business: Analisi Illimitate
-              </span>
-            )}
-          </div>
-        </MouseGlow>
-
+        {/* Errori */}
         {error && (
-          <div className="mt-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-xl">
+          <div className="mt-4 p-3 rounded-xl bg-red-900/30 border border-red-500/40 text-red-200 text-sm">
             {error}
           </div>
         )}
 
-        {/* Risultati */}
+        {/* Risultato */}
         {result && (
-          <motion.section
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-8 grid md:grid-cols-3 gap-6"
-          >
-            <div className="bg-white rounded-2xl shadow p-4 border">
-              <div className="text-sm text-gray-500">Punteggio Match</div>
-              <div className={`text-4xl font-extrabold ${theme.accent.replace('text-', 'text-')}`}>{result.score}</div>
-              <div className="text-xs text-gray-500 mt-1">su 100</div>
-              <div className="mt-4">
-                <div className="text-sm font-semibold mb-1">Keyword mancanti</div>
-                <ul className="list-disc pl-5 text-sm text-gray-700">
-                  {result.missingKeywords?.length
-                    ? result.missingKeywords.map((k, i) => <li key={i}>{k}</li>)
-                    : <li>Nessuna keyword critica mancante 🎯</li>}
+          <section className="mt-8 grid gap-6">
+            {/* SCORE */}
+            <div className="rounded-2xl border border-white/10 p-4 bg-neutral-900">
+              <div className="text-sm opacity-80 font-semibold mb-1">Compatibilità</div>
+              <div className="text-4xl font-extrabold">{result.score}/100</div>
+            </div>
+
+            {/* KEYWORDS */}
+            <div className="rounded-2xl border border-white/10 p-4 bg-neutral-900">
+              <div className="text-sm opacity-80 font-semibold mb-2">Keywords mancanti</div>
+              {result.missingKeywords.length ? (
+                <ul className="flex flex-wrap gap-2">
+                  {result.missingKeywords.map((kw, i) => (
+                    <li key={i} className="px-2 py-1 rounded-lg bg-neutral-800 border border-white/10 text-xs">{kw}</li>
+                  ))}
                 </ul>
-              </div>
+              ) : (
+                <div className="text-sm opacity-80">Nessuna keyword critica mancante. Ottimo!</div>
+              )}
             </div>
 
-            <div className="bg-white rounded-2xl shadow p-4 border md:col-span-2">
-              <div className="text-sm font-semibold mb-2">Suggerimenti</div>
-              <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
-                {result.suggestions?.map((s, i) => <li key={i}>{s}</li>)}
+            {/* SUGGESTIONS */}
+            <div className="rounded-2xl border border-white/10 p-4 bg-neutral-900">
+              <div className="text-sm opacity-80 font-semibold mb-2">Suggerimenti</div>
+              <ul className="list-disc ml-5 text-sm space-y-1">
+                {result.suggestions.map((s, i) => <li key={i}>{s}</li>)}
               </ul>
-
-              <div className="mt-4 flex flex-wrap gap-3">
-                <button onClick={() => exportFile('pdf')} disabled={loadingExport==='pdf'}
-                        className="px-4 py-2 rounded-lg border shadow-sm hover:shadow disabled:opacity-60">
-                  {loadingExport==='pdf' ? 'Esporto PDF…' : 'Esporta PDF'}
-                </button>
-                <button onClick={() => exportFile('docx')} disabled={loadingExport==='docx'}
-                        className="px-4 py-2 rounded-lg border shadow-sm hover:shadow disabled:opacity-60">
-                  {loadingExport==='docx' ? 'Esporto DOCX…' : 'Esporta DOCX'}
-                </button>
-              </div>
-
-              <div className="mt-4">
-                <div className="text-sm font-semibold mb-1">Sezione CV riscritta</div>
-                <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-3 rounded-xl border">
-{result.improvedResume}
-                </pre>
-              </div>
-
-              <div className="mt-4">
-                <div className="text-sm font-semibold mb-1">Cover letter generata</div>
-                <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-3 rounded-xl border">
-{result.coverLetter}
-                </pre>
-              </div>
             </div>
-          </motion.section>
+
+            {/* IMPROVED RESUME */}
+            <div className="rounded-2xl border border-white/10 p-4 bg-neutral-900">
+              <div className="text-sm opacity-80 font-semibold mb-2">CV riscritto (mirato alla JD)</div>
+              <pre className="whitespace-pre-wrap text-sm">{result.improvedResume}</pre>
+            </div>
+
+            {/* COVER LETTER */}
+            <div className="rounded-2xl border border-white/10 p-4 bg-neutral-900">
+              <div className="text-sm opacity-80 font-semibold mb-2">Cover letter generata</div>
+              <pre className="whitespace-pre-wrap text-sm">{result.coverLetter}</pre>
+            </div>
+          </section>
         )}
 
-        {/* Sezioni marketing/valore (intelligenti rispetto al piano) */}
-        <LandingPitch
-          plan={plan}
-          onUpgrade={(tier) => {
-            if (tier === 'pro') return checkout('pro');
-            if (tier === 'business') return checkout('business');
-          }}
-        />
-
+        {/* Piani / CTA */}
         <ValueSection
-          plan={plan}
-          onUpgrade={(tier) => {
-            if (tier === 'pro') return checkout('pro');
-            if (tier === 'business') return checkout('business');
-          }}
+          disabledPlus={BUSINESS_PLUS_SOLD_OUT}
+          loading={loadingCheckout}
+          onBuy={buyPlan}
         />
       </main>
+
+      {/* FOOTER */}
+      <footer className="border-t border-white/10 mt-12 py-6 text-center text-xs opacity-70">
+        © {new Date().getFullYear()} CVBoost.ai — Tutti i diritti riservati
+      </footer>
     </div>
   );
 }
