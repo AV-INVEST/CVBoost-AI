@@ -1,0 +1,265 @@
+{
+  "version": "1.0",
+  "locale": "it",
+  "domains": [
+    {
+      "name": "logistics",
+      "profile": "Magazziniere/Autista orientato a sicurezza, tempi e qualità del servizio.",
+      "signals": ["magazzino", "magazziniere", "consegne", "corriere", "picking", "packing", "wms", "muletto", "transpallet", "ddt", "spedizioni"],
+      "kpis": ["ordini/gg", "righe/ora", "% errori picking", "km/gg", "puntualità consegne", "tempi carico/scarico"],
+      "dict": {
+        "magazziniere": ["magazziniere", "magazzino", "warehouse"],
+        "consegne": ["consegne", "consegna", "delivery", "corriere"],
+        "patente b": ["patente b", "pat b", "patente-b"],
+        "furgone": ["furgone", "van"],
+        "picking": ["picking", "preparazione ordini", "picking list", "prelievo"],
+        "packing": ["packing", "imballaggio", "packaging"],
+        "carico scarico": ["carico e scarico", "carico/scarico", "carico", "scarico", "baie di carico"],
+        "inventario": ["inventario", "inventari", "inventari ciclici", "conta pezzi", "stock count"],
+        "wms": ["wms", "warehouse management system"],
+        "barcode": ["barcode", "lettore barcode", "palmare", "terminalino", "rfid", "lettore"],
+        "muletto": ["muletto", "carrellista", "carrello elevatore", "retrattile", "transpallet", "trans pallet", "trans-pallet"],
+        "spedizioni": ["spedizioni", "ddt", "bolle", "documenti di trasporto"]
+      }
+    },
+    {
+      "name": "hospitality",
+      "profile": "Professionista hospitality con attenzione a servizio, tempi e standard HACCP.",
+      "signals": ["cameriere", "chef", "cuoco", "ristorante", "pizzeria", "cucina", "sala", "haccp", "barista", "cocktail", "mise en place", "bancone", "coperti", "caffetteria", "pos"],
+      "kpis": ["coperti/servizio", "ticket medio", "tempi portate", "% resi", "recensioni"],
+      "dict": {
+        "cameriere": ["cameriere", "chef de rang", "runner sala", "commis di sala", "servizio ai tavoli", "servizio sala"],
+        "bancone": ["bancone", "al bancone", "bar"],
+        "caffetteria": ["caffetteria", "caffè", "caffè espresso", "cappuccino", "espresso", "latte art"],
+        "cocktail": ["cocktail", "mixology", "miscelazione", "shaker", "long drink"],
+        "cucina linea": ["linea", "partita", "aiuto cuoco", "cuoco", "pass", "impiattamento", "griglia", "forno"],
+        "pizzeria": ["pizzeria", "pizza", "impasto", "lievitazione", "forno a legna"],
+        "coperti": ["coperti", "gestione coperti", "coperti/servizio", "numero coperti", "turni tavoli"],
+        "haccp": ["haccp", "sicurezza alimentare", "igiene alimentare"],
+        "cassa": ["cassa", "pos", "chiusura cassa", "apertura cassa"],
+        "prenotazioni": ["prenotazioni", "booking", "gestione tavoli", "turni sala", "agenda"],
+        "mise en place": ["mise en place", "mise-en-place", "mise"]
+      }
+    },
+    {
+      "name": "retail",
+      "profile": "Addetto/a vendite con focus su KPI, servizio e visual.",
+      "signals": ["negozio", "vendite", "cassa", "riassortimento", "visual merchandising", "store", "retail", "vetrine", "crm"],
+      "kpis": ["fatturato/gg", "tasso conversione", "scontrino medio", "% fidelizzati", "rotazione stock"],
+      "dict": {
+        "cassa": ["cassa", "pos", "chiusura cassa", "apertura cassa"],
+        "vendite": ["vendite", "sales", "obiettivi vendita", "kpi vendite", "upselling", "cross selling"],
+        "riassortimento": ["riassortimento", "rifornimento", "replenishment"],
+        "inventario": ["inventario", "stock", "conta pezzi"],
+        "visual": ["visual merchandising", "vetrine", "allestimento"],
+        "crm": ["crm", "fidelizzazione", "tessere", "newsletter"],
+        "resi": ["resi", "cambi", "post vendita"]
+      }
+    },
+    {
+      "name": "office",
+      "profile": "Impiegato/a back office preciso/a e organizzato/a, ottimo uso Excel/Office.",
+      "signals": ["segreteria", "back office", "front office", "agenda", "archivio", "pec", "protocollo", "excel", "office"],
+      "kpis": ["pratiche/gg", "tempi evasione", "accuratezza %", "soddisfazione interna"],
+      "dict": {
+        "back office": ["back office", "pratiche", "data entry", "gestione pratiche", "archiviazione"],
+        "front office": ["front office", "reception", "accoglienza"],
+        "agenda": ["agenda", "calendario", "prenotazioni", "riunioni"],
+        "pec": ["pec", "protocollo", "protocollo informatico"],
+        "excel": ["excel", "foglio di calcolo", "office", "word", "powerpoint"],
+        "posta": ["posta", "corrieri", "spedizioni interne"],
+        "fatture": ["fatture", "ddt", "prima nota"]
+      }
+    },
+    {
+      "name": "accounting",
+      "profile": "Addetto/a contabilità generale preciso/a, puntuale nelle scadenze fiscali.",
+      "signals": ["contabilità", "prima nota", "fatturazione", "iva", "f24", "quadrature", "bilancio", "riconciliazioni"],
+      "kpis": ["tempi chiusura mese", "% errori registrazioni", "scadenze rispettate", "incassi/gg"],
+      "dict": {
+        "prima nota": ["prima nota", "prima nota cassa", "registrazioni prima nota"],
+        "fatturazione": ["fatturazione attiva", "fatturazione passiva", "ciclo attivo", "ciclo passivo", "e-fattura"],
+        "iva": ["iva", "liquidazioni iva", "esterometro"],
+        "f24": ["f24", "pagamenti imposte"],
+        "riconciliazioni": ["riconciliazioni", "quadrature", "riconciliazioni bancarie"],
+        "cespiti": ["cespiti", "ammortamenti"],
+        "bilancio": ["scritture di bilancio", "bilancio", "assestamenti"],
+        "erp": ["sap", "zucchetti", "teamsystem", "navision", "oracle ebs"]
+      }
+    },
+    {
+      "name": "marketing",
+      "profile": "Marketer data driven orientato a performance e sperimentazione.",
+      "signals": ["marketing", "seo", "sem", "ads", "google ads", "facebook ads", "email", "crm", "content", "copy", "ga4", "roas", "cpa"],
+      "kpis": ["roas", "ctr", "cpc", "cpa", "tasso apertura", "conversioni", "mql/sql"],
+      "dict": {
+        "seo": ["seo", "on page seo", "technical seo", "link building", "keyword research", "core web vitals"],
+        "sem": ["sem", "google ads", "search ads", "display ads", "sa360", "meta ads", "facebook ads"],
+        "email": ["email marketing", "newsletter", "automation", "mailchimp", "hubspot"],
+        "analytics": ["ga4", "google analytics", "tag manager", "utm", "attribution"],
+        "content": ["content", "copywriting", "editorial plan", "blog", "landing"],
+        "crm": ["crm", "hubspot", "salesforce marketing cloud"]
+      }
+    },
+    {
+      "name": "customer_service",
+      "profile": "Customer Service orientato a tempi di risposta e qualità percepita.",
+      "signals": ["call center", "assistenza", "ticketing", "helpdesk", "crm", "sla", "nps", "chat", "telefono", "service cloud"],
+      "kpis": ["tempo medio risposta", "first contact resolution", "nps/csat", "ticket/gg"],
+      "dict": {
+        "ticketing": ["ticketing", "helpdesk", "case management", "zendesk", "freshdesk", "service cloud"],
+        "sla": ["sla", "tempi risposta", "tempi risoluzione"],
+        "nps": ["nps", "customer satisfaction", "csat"],
+        "crm": ["crm", "salesforce", "hubspot", "zendesk"],
+        "canali": ["telefono", "chat", "email", "social care"]
+      }
+    },
+    {
+      "name": "healthcare",
+      "profile": "Operatore sanitario attento/a a protocolli, igiene e continuità di cura.",
+      "signals": ["infermiere", "oss", "medicazioni", "somministrazione farmaci", "parametri vitali", "igiene paziente", "triage", "cartella clinica"],
+      "kpis": ["pazienti/turno", "aderenza protocolli", "eventi avversi", "tempi triage"],
+      "dict": {
+        "somministrazione farmaci": ["somministrazione farmaci", "terapie"],
+        "medicazioni": ["medicazioni", "ferite", "piaghe"],
+        "parametri vitali": ["parametri vitali", "pressione", "saturazione", "glicemia"],
+        "igiene paziente": ["igiene paziente", "igiene personale", "mobilizzazione"],
+        "cartella clinica": ["cartella clinica", "cartella elettronica", "emr"],
+        "dpi": ["dpi", "sicurezza", "protocollo"],
+        "sala operatoria": ["sala operatoria", "strumentista", "sterilizzazione"]
+      }
+    },
+    {
+      "name": "construction",
+      "profile": "Operaio/tecnico edile attento a sicurezza, tempi e qualità esecutiva.",
+      "signals": ["cantiere", "muratore", "carpentiere", "cartongesso", "piastrellista", "ponteggi", "sicurezza", "dpi", "capocantiere"],
+      "kpis": ["tempi lavorazione", "non conformità", "sicurezza (infortuni=0)", "scarti"],
+      "dict": {
+        "muratura": ["muratore", "muratura", "intonaci", "tramezzi"],
+        "carpenteria": ["carpentiere", "armature", "ferro", "casseri"],
+        "cartongesso": ["cartongesso", "controsoffitti"],
+        "piastrellatura": ["piastrellista", "piastrellatura", "posa pavimenti", "rivestimenti"],
+        "impiantistica": ["impianti idraulici", "impianti elettrici", "canalizzazioni"],
+        "sicurezza": ["sicurezza", "dpi", "ponteggi", "coordinamento"],
+        "autocad": ["autocad", "disegno tecnico", "render"]
+      }
+    },
+    {
+      "name": "manufacturing",
+      "profile": "Operatore di produzione focalizzato su qualità, tempi e sicurezza.",
+      "signals": ["cnc", "tornio", "fresa", "assemblaggio", "qualità", "iso 9001", "lean", "5s", "just in time", "saldatura", "manutenzione"],
+      "kpis": ["pz/ora", "scarti %", "fermi impianto", "tempi cambio attrezzaggio"],
+      "dict": {
+        "cnc": ["cnc", "tornio cnc", "fresatrice cnc", "centri di lavoro"],
+        "saldatura": ["saldatura", "mig", "tig", "elettrodo"],
+        "assemblaggio": ["assemblaggio", "montaggio", "linea di produzione"],
+        "qualita": ["controllo qualità", "collaudi", "iso 9001", "spc"],
+        "lean": ["lean", "5s", "kaizen", "just in time"],
+        "manutenzione": ["manutenzione", "tpm", "preventiva", "correttiva"]
+      }
+    },
+    {
+      "name": "it_software",
+      "profile": "Software Engineer orientato a qualità del codice, performance e delivery continua.",
+      "signals": ["developer", "sviluppatore", "software", "programmatore", "java", "c#", "python", "javascript", "typescript", "react", "node", "spring", ".net", "api", "sql"],
+      "kpis": ["cycle time", "defect rate", "coverage %", "deployment freq", "lead time"],
+      "dict": {
+        "linguaggi": ["java", "c#", "python", "javascript", "typescript", "go", "kotlin", "php", "ruby", "swift", "c++"],
+        "frontend": ["react", "angular", "vue", "next.js", "nextjs", "vite", "tailwind"],
+        "backend": ["node", "express", "spring", "spring boot", ".net", "asp.net", "django", "fastapi", "laravel"],
+        "db": ["sql", "postgres", "mysql", "mariadb", "oracle", "nosql", "mongodb", "redis"],
+        "api": ["rest", "graphql", "grpc"],
+        "cloud": ["aws", "azure", "gcp", "vercel", "netlify"],
+        "dev": ["git", "ci/cd", "github actions", "gitlab ci", "docker", "kubernetes", "terraform"],
+        "quality": ["tdd", "unit test", "jest", "pytest", "cypress", "sonarqube", "clean code"],
+        "patterns": ["microservices", "ddd", "event driven", "cqrs"]
+      }
+    },
+    {
+      "name": "data_bi",
+      "profile": "Data/BI Analyst focalizzato su insight azionabili, qualità dati e governance.",
+      "signals": ["data analyst", "bi", "power bi", "tableau", "sql", "python", "pandas", "etl", "warehouse", "dbt", "airflow", "machine learning", "ml"],
+      "kpis": ["tempo refresh dati", "adozione dashboard", "accuratezza modelli", "time to insight"],
+      "dict": {
+        "sql": ["sql", "postgres", "mysql", "server", "oracle", "t sql"],
+        "python": ["python", "pandas", "numpy", "scikit learn", "matplotlib", "seaborn"],
+        "bi": ["power bi", "tableau", "looker", "qlik"],
+        "etl": ["etl", "elt", "airflow", "dbt", "talend", "informatica", "pentaho"],
+        "warehouse": ["data warehouse", "star schema", "snowflake", "bigquery", "redshift"],
+        "ml": ["machine learning", "regressione", "classificazione", "clustering", "ab testing", "statistica"],
+        "viz": ["dashboard", "report", "storytelling", "kpi"]
+      }
+    },
+    {
+      "name": "devops_sys",
+      "profile": "DevOps/SysAdmin orientato ad automazione, affidabilità e osservabilità.",
+      "signals": ["linux", "sysadmin", "devops", "docker", "kubernetes", "terraform", "ansible", "ci/cd", "monitoring", "prometheus", "grafana"],
+      "kpis": ["lead time change", "deploy/day", "mttr", "availability %"],
+      "dict": {
+        "linux": ["linux", "shell", "bash", "debian", "ubuntu", "centos", "rhel"],
+        "containers": ["docker", "kubernetes", "helm"],
+        "iac": ["terraform", "ansible", "pulumi", "cloudformation"],
+        "ci/cd": ["ci/cd", "jenkins", "github actions", "gitlab ci", "argo"],
+        "monitoring": ["prometheus", "grafana", "elk", "elastic", "opentelemetry"],
+        "cloud": ["aws", "azure", "gcp"],
+        "networking": ["dns", "http", "tls", "load balancer", "nginx", "haproxy"]
+      }
+    },
+    {
+      "name": "design_ux",
+      "profile": "UX/UI Designer centrato su ricerca utenti, coerenza visiva e accessibilità.",
+      "signals": ["ux", "ui", "figma", "wireframe", "prototype", "research", "usability", "design system", "accessibilità"],
+      "kpis": ["task success %", "time on task", "bugs ui", "adozione design system"],
+      "dict": {
+        "figma": ["figma", "sketch", "xd"],
+        "research": ["ux research", "interviste", "test di usabilità", "heuristic evaluation"],
+        "wireframe": ["wireframe", "prototipi", "user flow"],
+        "design system": ["design system", "component library", "storybook"],
+        "accessibilita": ["accessibilita", "wcag", "aria", "contrast"]
+      }
+    },
+    {
+      "name": "project_mgmt",
+      "profile": "Project Manager orientato a delivery, governance e comunicazione efficace.",
+      "signals": ["project manager", "pm", "agile", "scrum", "kanban", "roadmap", "stakeholder", "budget", "gantt", "rischi"],
+      "kpis": ["% scope completato", "on time delivery", "varianza budget", "soddisfazione stakeholder"],
+      "dict": {
+        "metodologie": ["agile", "scrum", "kanban", "waterfall", "prince2", "pmp"],
+        "strumenti": ["jira", "confluence", "asana", "trello", "microsoft project"],
+        "governance": ["roadmap", "kpi progetto", "budget", "risk management", "stakeholder management"]
+      }
+    },
+    {
+      "name": "hr_recruiting",
+      "profile": "HR generalist/recruiter orientato a qualità assunzioni e tempi di chiusura.",
+      "signals": ["hr", "risorse umane", "recruiting", "selezione", "onboarding", "colloqui", "job posting", "payroll", "zucchetti"],
+      "kpis": ["time to hire", "quality of hire", "retention %", "soddisfazione manager"],
+      "dict": {
+        "recruiting": ["recruiting", "selezione", "screening cv", "interviste", "assessment", "job posting"],
+        "onboarding": ["onboarding", "welcome kit", "piani inserimento"],
+        "formazione": ["formazione", "piani formativi", "academy", "lms"],
+        "payroll": ["payroll", "cedolini", "presenze", "zucchetti", "teamsystem"],
+        "hr admin": ["contratti", "proroghe", "note spese", "policy", "gdpr"]
+      }
+    },
+    {
+      "name": "beauty",
+      "profile": "Operatore/trice beauty attento/a a protocolli, igiene e accoglienza.",
+      "signals": ["estetista", "parrucchiera", "epilazione", "manicure", "pedicure", "massaggi", "skincare", "salone", "cabina"],
+      "kpis": ["clienti/gg", "tempi servizio", "% fidelizzazione", "valore scontrino", "recensioni"],
+      "dict": {
+        "manicure": ["manicure", "semipermanente", "unghie"],
+        "pedicure": ["pedicure"],
+        "trattamenti viso": ["trattamenti viso", "pulizia viso", "detersione", "idratazione", "skincare viso"],
+        "trattamenti corpo": ["trattamenti corpo", "fanghi", "scrub corpo"],
+        "epilazione": ["epilazione", "ceretta", "a cera", "depilazione"],
+        "massaggi": ["massaggi", "linfodrenante", "rilassante"],
+        "accoglienza": ["accoglienza", "reception"],
+        "gestione appuntamenti": ["gestione appuntamenti", "agenda", "prenotazioni", "booking", "calendar"],
+        "cassa": ["cassa", "pos", "pagamenti", "incassi"],
+        "vendita": ["vendita", "upselling", "cross selling", "sell out", "consulenza prodotto"],
+        "igiene": ["igiene", "sanificazione", "pulizia", "riordino"]
+      }
+    }
+  ]
+}
