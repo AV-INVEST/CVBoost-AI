@@ -21,6 +21,16 @@ type AnalyzeResult = {
   coverLetter: string;
 };
 
+// --- TIPI & NORMALIZZAZIONE PIANO --------------------
+type UiPlan = 'free' | 'pro' | 'business' | 'business_plus';
+
+function toUiPlan(plan: unknown): UiPlan {
+  return plan === 'pro' || plan === 'business' || plan === 'business_plus' || plan === 'free'
+    ? plan
+    : 'free';
+}
+// -----------------------------------------------------
+
 function normalizeText(t: string) {
   return (t || '').replace(/\r\n/g, '\n').trim();
 }
@@ -84,11 +94,11 @@ export default function Page() {
   const [loading, setLoading] = useState(false);
   const [loadingExport, setLoadingExport] = useState<null | 'pdf' | 'docx'>(null);
   const [loadingCheckout, setLoadingCheckout] =
-    useState<null | 'pro' | 'business' | 'business_plus'>(null);
+    useState<null | UiPlan>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalyzeResult | null>(null);
   const [remaining, setRemaining] = useState<number | 'infinite' | null>(null);
-  const [plan, setPlan] = useState<'free' | 'pro' | 'business' | 'business_plus' | null>(null);
+  const [plan, setPlan] = useState<UiPlan | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Nuovo: modalità d’uso (verde/viola)
@@ -165,7 +175,7 @@ export default function Page() {
     }
   }
 
-  async function buyPlan(tier: 'pro' | 'business' | 'business_plus') {
+  async function buyPlan(tier: UiPlan) {
     try {
       setLoadingCheckout(tier);
       setError(null);
@@ -197,7 +207,8 @@ export default function Page() {
             <PlanPill plan={plan} />
           </div>
           <HeaderAuth onAuthChange={({ me }) => {
-            setPlan(me.plan === 'unknown' ? 'free' : (me.plan as 'free' | 'pro' | 'business' | 'business_plus'));
+            // 🔒 Normalizza qualsiasi valore non riconosciuto a 'free'
+            setPlan(toUiPlan(me?.plan));
             setRemaining(null);
             setRefreshKey((k) => k + 1);
           }} />
@@ -325,7 +336,7 @@ export default function Page() {
               )}
             </div>
 
-            {/* SUGGESTIONS */}
+            {/* SUGGERIMENTI */}
             <div className="rounded-2xl border border-white/10 p-4 bg-neutral-900">
               <div className="text-sm opacity-80 font-semibold mb-2">Suggerimenti</div>
               <ul className="list-disc ml-5 text-sm space-y-1">
@@ -333,7 +344,7 @@ export default function Page() {
               </ul>
             </div>
 
-            {/* IMPROVED RESUME */}
+            {/* CV RISCRITTO */}
             <div className="rounded-2xl border border-white/10 p-4 bg-neutral-900">
               <div className="text-sm opacity-80 font-semibold mb-2">CV riscritto (mirato alla JD)</div>
               <pre className="whitespace-pre-wrap text-sm">{result.improvedResume}</pre>
