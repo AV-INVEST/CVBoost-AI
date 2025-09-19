@@ -1,21 +1,5 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/api/dev/reset-usage/route": "app/api/dev/reset-usage/route.js",
-  "/impostazioni/privacy/page": "app/impostazioni/privacy/page.js",
   "/page": "app/page.js",
-  "/cookies/page": "app/cookies/page.js",
-  "/privacy/page": "app/privacy/page.js",
-  "/termini/page": "app/termini/page.js",
-  "/api/account/export/route": "app/api/account/export/route.js",
-  "/api/auth/login/route": "app/api/auth/login/route.js",
-  "/api/analyze/route": "app/api/analyze/route.js",
   "/api/auth/me/route": "app/api/auth/me/route.js",
-  "/api/usage/summary/route": "app/api/usage/summary/route.js",
-  "/api/auth/logout/route": "app/api/auth/logout/route.js",
-  "/api/auth/verify/route": "app/api/auth/verify/route.js",
-  "/api/dev/set-plan/route": "app/api/dev/set-plan/route.js",
-  "/api/account/delete/route": "app/api/account/delete/route.js",
-  "/api/auth/callback/route": "app/api/auth/callback/route.js",
-  "/api/usage/search/route": "app/api/usage/search/route.js",
-  "/api/auth/signup/route": "app/api/auth/signup/route.js"
+  "/api/usage/summary/route": "app/api/usage/summary/route.js"
 }

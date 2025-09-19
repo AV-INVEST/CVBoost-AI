@@ -1,56 +1,15 @@
 {
   "pages": {
-    "/_not-found/page": [
-      "static/chunks/webpack-8658fdbc42bfbbae.js",
-      "static/chunks/fd9d1056-c54fa0a26b056326.js",
-      "static/chunks/117-d3b9783609fec333.js",
-      "static/chunks/main-app-f58006923b2cb6a9.js",
-      "static/chunks/app/_not-found/page-7178cdb2e0bba9f5.js"
+    "/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/page.js"
     ],
     "/layout": [
-      "static/chunks/webpack-8658fdbc42bfbbae.js",
-      "static/chunks/fd9d1056-c54fa0a26b056326.js",
-      "static/chunks/117-d3b9783609fec333.js",
-      "static/chunks/main-app-f58006923b2cb6a9.js",
-      "static/css/f769186b342d916d.css",
-      "static/chunks/972-5fa7687fe1b2a405.js",
-      "static/chunks/app/layout-05340f2cc17136b2.js"
-    ],
-    "/impostazioni/privacy/page": [
-      "static/chunks/webpack-8658fdbc42bfbbae.js",
-      "static/chunks/fd9d1056-c54fa0a26b056326.js",
-      "static/chunks/117-d3b9783609fec333.js",
-      "static/chunks/main-app-f58006923b2cb6a9.js",
-      "static/chunks/app/impostazioni/privacy/page-d6b59fa5bb6f7592.js"
-    ],
-    "/page": [
-      "static/chunks/webpack-8658fdbc42bfbbae.js",
-      "static/chunks/fd9d1056-c54fa0a26b056326.js",
-      "static/chunks/117-d3b9783609fec333.js",
-      "static/chunks/main-app-f58006923b2cb6a9.js",
-      "static/chunks/672-1d0e9ef0fc8ce819.js",
-      "static/chunks/app/page-2992595f9656faf9.js"
-    ],
-    "/cookies/page": [
-      "static/chunks/webpack-8658fdbc42bfbbae.js",
-      "static/chunks/fd9d1056-c54fa0a26b056326.js",
-      "static/chunks/117-d3b9783609fec333.js",
-      "static/chunks/main-app-f58006923b2cb6a9.js",
-      "static/chunks/app/cookies/page-e8d89f285d1602e5.js"
-    ],
-    "/privacy/page": [
-      "static/chunks/webpack-8658fdbc42bfbbae.js",
-      "static/chunks/fd9d1056-c54fa0a26b056326.js",
-      "static/chunks/117-d3b9783609fec333.js",
-      "static/chunks/main-app-f58006923b2cb6a9.js",
-      "static/chunks/app/privacy/page-4c9f42e809b8a8e3.js"
-    ],
-    "/termini/page": [
-      "static/chunks/webpack-8658fdbc42bfbbae.js",
-      "static/chunks/fd9d1056-c54fa0a26b056326.js",
-      "static/chunks/117-d3b9783609fec333.js",
-      "static/chunks/main-app-f58006923b2cb6a9.js",
-      "static/chunks/app/termini/page-399b3229d67a6121.js"
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/layout.css",
+      "static/chunks/app/layout.js"
     ]
   }
 }
