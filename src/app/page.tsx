@@ -1,3 +1,4 @@
+// src/app/page.tsx
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -8,7 +9,6 @@ import UsageCounter from '@/components/UsageCounter';
 import PlanPill from '@/components/PlanPill';
 import LandingPitch from '@/components/LandingPitch';
 import ValueSection from '@/components/ValueSection';
-// ✅ Manteniamo RoleSwitch (niente glow)
 import RoleSwitch, { type Mode } from '@/components/RoleSwitch';
 
 type AnalyzeResult = {
@@ -56,13 +56,17 @@ export default function Page() {
   const [plan, setPlan] = useState<UiPlan | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // modalità d’uso (verde/viola)
+  // modalità (verde/viola)
   const [mode, setMode] = useState<Mode>('candidate');
 
   // Tema cromatico per candidate/recruiter
-  const theme = mode === 'candidate'
-    ? { accent: 'text-emerald-600', btn: 'bg-emerald-600 hover:bg-emerald-700', ring: 'focus:ring-emerald-500' }
-    : { accent: 'text-indigo-600',  btn: 'bg-indigo-600 hover:bg-indigo-700',  ring: 'focus:ring-indigo-500' };
+  const theme =
+    mode === 'candidate'
+      ? { accent: 'text-emerald-600', btn: 'bg-emerald-600 hover:bg-emerald-700', ring: 'focus:ring-emerald-500' }
+      : { accent: 'text-indigo-600', btn: 'bg-indigo-600 hover:bg-indigo-700', ring: 'focus:ring-indigo-500' };
+
+  // Valore sempre non-null per i componenti UI
+  const planForUI: UiPlan = plan ?? 'free';
 
   // carica il piano all’avvio
   useEffect(() => {
@@ -79,10 +83,12 @@ export default function Page() {
 
   async function analyze() {
     setError(null);
-    if (!resume || !jd) { setError('Inserisci entrambi i campi.'); return; }
+    if (!resume || !jd) {
+      setError('Inserisci entrambi i campi.');
+      return;
+    }
     setLoading(true);
     try {
-      // Mapping in base alla modalità:
       const body =
         mode === 'candidate'
           ? { resume, jobDescription: jd, locale: 'it', mode }
@@ -95,6 +101,7 @@ export default function Page() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(prettyError(data?.error || 'Errore analisi'));
+
       setResult(data as AnalyzeResult);
       setRemaining(data?.remaining ?? null);
       setPlan(toUiPlan(data?.plan));
@@ -102,11 +109,16 @@ export default function Page() {
     } catch (e: any) {
       setError(prettyError(e.message || 'Errore analisi'));
       setRefreshKey((k) => k + 1);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function exportFile(kind: 'pdf' | 'docx') {
-    if (!result) { setError('Esegui prima una analisi.'); return; }
+    if (!result) {
+      setError('Esegui prima una analisi.');
+      return;
+    }
     setLoadingExport(kind);
     try {
       const res = await fetch(`/api/export/${kind}`, {
@@ -136,7 +148,9 @@ export default function Page() {
       URL.revokeObjectURL(url);
     } catch (e: any) {
       setError(prettyError(e.message || 'Errore export'));
-    } finally { setLoadingExport(null); }
+    } finally {
+      setLoadingExport(null);
+    }
   }
 
   async function checkout(tier: 'pro' | 'business' | 'business_plus') {
@@ -151,10 +165,8 @@ export default function Page() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tier,
-          successUrl: typeof window !== 'undefined'
-            ? window.location.origin + '/?checkout=success' : undefined,
-          cancelUrl: typeof window !== 'undefined'
-            ? window.location.href : undefined,
+          successUrl: typeof window !== 'undefined' ? window.location.origin + '/?checkout=success' : undefined,
+          cancelUrl: typeof window !== 'undefined' ? window.location.href : undefined,
         }),
       });
       const data = await res.json();
@@ -162,23 +174,24 @@ export default function Page() {
       window.location.href = data.url as string;
     } catch (e: any) {
       setError(prettyError(e.message || 'Errore checkout'));
-    } finally { setLoadingCheckout(null); }
+    } finally {
+      setLoadingCheckout(null);
+    }
   }
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      {/* HEADER (UsageCounter rimane invariato: restanti + reset) */}
+      {/* HEADER */}
       <header className="relative bg-white border-b">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="font-extrabold text-xl">
               CVBoost<span className={theme.accent}>.ai</span>
             </div>
-            <PlanPill plan={plan} />
+            <PlanPill plan={planForUI} />
           </div>
           <HeaderAuth
             onAuthChange={({ me }) => {
-              // 🔒 Tip-safe: normalizziamo il piano
               setPlan(toUiPlan(me?.plan));
               setRemaining(null);
               setRefreshKey((k) => k + 1);
@@ -193,7 +206,7 @@ export default function Page() {
 
       {/* MAIN */}
       <main className="max-w-5xl mx-auto px-4 py-8">
-        {/* Titolo + switch a pillola */}
+        {/* Titolo + switch */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
           <motion.h1
             initial={{ opacity: 0, y: 10 }}
@@ -203,7 +216,6 @@ export default function Page() {
             Ottimizza il tuo <span className={theme.accent}>CV</span> per gli ATS in 60 secondi
           </motion.h1>
 
-          {/* Switch centrato e allineato */}
           <div className="flex justify-center md:justify-end">
             <RoleSwitch mode={mode} onChange={setMode} />
           </div>
@@ -211,17 +223,20 @@ export default function Page() {
 
         <p className="text-gray-600 mb-8 max-w-3xl">
           {mode === 'candidate' ? (
-            <>Se stai <b>cercando lavoro</b>, incolla il tuo CV a sinistra e la Job Description a destra. Otterrai
-            <span className="font-semibold"> punteggio</span>,
-            <span className="font-semibold"> keyword mancanti</span>,
-            <span className="font-semibold"> CV riscritto</span> e cover letter.</>
+            <>
+              Se stai <b>cercando lavoro</b>, incolla il tuo CV a sinistra e la Job Description a destra. Otterrai
+              <span className="font-semibold"> punteggio</span>,<span className="font-semibold"> keyword mancanti</span>,
+              <span className="font-semibold"> CV riscritto</span> e cover letter.
+            </>
           ) : (
-            <>Se sei un <b>recruiter</b>, incolla l’<b>annuncio/descrizione del ruolo</b> a sinistra e, a destra,
-            un <b>CV di riferimento</b> (opzionale) o i requisiti chiave. Lo screening ATS confronterà i due testi.</>
+            <>
+              Se sei un <b>recruiter</b>, incolla l’<b>annuncio/descrizione del ruolo</b> a sinistra e, a destra, un
+              <b> CV di riferimento</b> (opzionale) o i requisiti chiave. Lo screening ATS confronterà i due testi.
+            </>
           )}
         </p>
 
-        {/* 🔧 RIMOSSO MouseGlow. Manteniamo il layout invariato */}
+        {/* Form */}
         <div className="grid md:grid-cols-2 gap-6">
           <div className="bg-white rounded-2xl shadow p-4 border">
             <label className="block text-sm font-semibold mb-2">
@@ -229,9 +244,7 @@ export default function Page() {
             </label>
             <textarea
               className={`w-full h-56 p-3 border rounded-xl focus:outline-none focus:ring-2 ${theme.ring}`}
-              placeholder={mode === 'candidate'
-                ? 'Incolla qui il tuo CV in testo…'
-                : 'Incolla qui il testo dell’annuncio/ruolo…'}
+              placeholder={mode === 'candidate' ? 'Incolla qui il tuo CV in testo…' : 'Incolla qui il testo dell’annuncio/ruolo…'}
               value={resume}
               onChange={(e) => setResume(e.target.value)}
             />
@@ -248,9 +261,7 @@ export default function Page() {
             </label>
             <textarea
               className={`w-full h-56 p-3 border rounded-xl focus:outline-none focus:ring-2 ${theme.ring}`}
-              placeholder={mode === 'candidate'
-                ? 'Incolla la JD del ruolo…'
-                : 'Incolla un CV di riferimento o elenca i requisiti chiave…'}
+              placeholder={mode === 'candidate' ? 'Incolla la JD del ruolo…' : 'Incolla un CV di riferimento o elenca i requisiti chiave…'}
               value={jd}
               onChange={(e) => setJd(e.target.value)}
             />
@@ -268,80 +279,62 @@ export default function Page() {
             disabled={loading}
             className={`px-5 py-3 rounded-xl text-white font-semibold shadow hover:shadow-md disabled:opacity-60 ${theme.btn}`}
           >
-            {loading ? 'Analisi in corso…' : (mode === 'candidate' ? 'Analizza CV' : 'Analizza annuncio')}
+            {loading ? 'Analisi in corso…' : mode === 'candidate' ? 'Analizza CV' : 'Analizza annuncio'}
           </button>
 
-          {plan !== 'business' && plan !== 'business_plus' && (
+          {planForUI !== 'business' && planForUI !== 'business_plus' && (
             <span className="text-sm text-gray-500">
               Gratis 3 Analisi • Passa a Pro: 50 Analisi Mensili • Passa a Business: Analisi Illimitate
             </span>
           )}
         </div>
 
-        {error && (
-          <div className="mt-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-xl">
-            {error}
-          </div>
-        )}
+        {error && <div className="mt-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-xl">{error}</div>}
 
         {/* Risultati */}
         {result && (
-          <motion.section
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-8 grid md:grid-cols-3 gap-6"
-          >
+          <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-8 grid md:grid-cols-3 gap-6">
             <div className="bg-white rounded-2xl shadow p-4 border">
               <div className="text-sm text-gray-500">Punteggio Match</div>
-              <div className={`text-4xl font-extrabold ${theme.accent.replace('text-', 'text-')}`}>{result.score}</div>
+              <div className={`text-4xl font-extrabold ${theme.accent}`}>{result.score}</div>
               <div className="text-xs text-gray-500 mt-1">su 100</div>
               <div className="mt-4">
                 <div className="text-sm font-semibold mb-1">Keyword mancanti</div>
                 <ul className="list-disc pl-5 text-sm text-gray-700">
-                  {result.missingKeywords?.length
-                    ? result.missingKeywords.map((k, i) => <li key={i}>{k}</li>)
-                    : <li>Nessuna keyword critica mancante 🎯</li>}
+                  {result.missingKeywords?.length ? result.missingKeywords.map((k, i) => <li key={i}>{k}</li>) : <li>Nessuna keyword critica mancante 🎯</li>}
                 </ul>
               </div>
             </div>
 
             <div className="bg-white rounded-2xl shadow p-4 border md:col-span-2">
               <div className="text-sm font-semibold mb-2">Suggerimenti</div>
-              <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
-                {result.suggestions?.map((s, i) => <li key={i}>{s}</li>)}
-              </ul>
+              <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">{result.suggestions?.map((s, i) => <li key={i}>{s}</li>)}</ul>
 
               <div className="mt-4 flex flex-wrap gap-3">
-                <button onClick={() => exportFile('pdf')} disabled={loadingExport==='pdf'}
-                        className="px-4 py-2 rounded-lg border shadow-sm hover:shadow disabled:opacity-60">
-                  {loadingExport==='pdf' ? 'Esporto PDF…' : 'Esporta PDF'}
+                <button onClick={() => exportFile('pdf')} disabled={loadingExport === 'pdf'} className="px-4 py-2 rounded-lg border shadow-sm hover:shadow disabled:opacity-60">
+                  {loadingExport === 'pdf' ? 'Esporto PDF…' : 'Esporta PDF'}
                 </button>
-                <button onClick={() => exportFile('docx')} disabled={loadingExport==='docx'}
-                        className="px-4 py-2 rounded-lg border shadow-sm hover:shadow disabled:opacity-60">
-                  {loadingExport==='docx' ? 'Esporto DOCX…' : 'Esporta DOCX'}
+                <button onClick={() => exportFile('docx')} disabled={loadingExport === 'docx'} className="px-4 py-2 rounded-lg border shadow-sm hover:shadow disabled:opacity-60">
+                  {loadingExport === 'docx' ? 'Esporto DOCX…' : 'Esporta DOCX'}
                 </button>
               </div>
 
               <div className="mt-4">
                 <div className="text-sm font-semibold mb-1">Sezione CV riscritta</div>
-                <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-3 rounded-xl border">
-{result.improvedResume}
-                </pre>
+                <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-3 rounded-xl border">{result.improvedResume}</pre>
               </div>
 
               <div className="mt-4">
                 <div className="text-sm font-semibold mb-1">Cover letter generata</div>
-                <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-3 rounded-xl border">
-{result.coverLetter}
-                </pre>
+                <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-3 rounded-xl border">{result.coverLetter}</pre>
               </div>
             </div>
           </motion.section>
         )}
 
-        {/* Sezioni marketing/valore (intelligenti rispetto al piano) */}
+        {/* Sezioni marketing/valore */}
         <LandingPitch
-          plan={plan}
+          plan={planForUI}
           onUpgrade={(tier) => {
             if (tier === 'pro') return checkout('pro');
             if (tier === 'business') return checkout('business');
@@ -349,7 +342,7 @@ export default function Page() {
         />
 
         <ValueSection
-          plan={plan}
+          plan={planForUI}
           onUpgrade={(tier) => {
             if (tier === 'pro') return checkout('pro');
             if (tier === 'business') return checkout('business');
