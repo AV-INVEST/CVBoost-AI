@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
 
 import HeaderAuth from '@/components/HeaderAuth';
 import UsageCounter from '@/components/UsageCounter';
@@ -9,7 +8,6 @@ import PlanPill from '@/components/PlanPill';
 import LandingPitch from '@/components/LandingPitch';
 import ValueSection from '@/components/ValueSection';
 import RoleSwitch, { type Mode } from '@/components/RoleSwitch';
-import MouseGlow from '@/components/MouseGlow';
 
 type AnalyzeResult = {
   score: number;
@@ -19,16 +17,59 @@ type AnalyzeResult = {
   coverLetter: string;
 };
 
+type UiPlan = 'free' | 'pro' | 'business' | 'business_plus';
 const BUSINESS_PLUS_SOLD_OUT = true;
 
-// --- Tipi piano ristretti + normalizzazione ---
-type UiPlan = 'free' | 'pro' | 'business' | 'business_plus';
+// Normalizza qualsiasi valore “strano” del piano
 function toUiPlan(plan: unknown): UiPlan {
   return plan === 'pro' || plan === 'business' || plan === 'business_plus' || plan === 'free'
     ? plan
     : 'free';
 }
-// ----------------------------------------------
+
+function normalizeText(t: string) {
+  return (t || '').replace(/\r\n/g, '\n').trim();
+}
+
+function sampleTextCandidate() {
+  return `ANDREA VERDI
+Full-Stack Developer | Milano
+Email: andrea.verdi@mail.com | GitHub: github.com/andreaverdi | LinkedIn: linkedin.com/in/andreaverdi
+
+ESPERIENZA
+Senior Full-Stack Dev – FinTech Spa (2021–oggi)
+- Next.js 14, Node.js, PostgreSQL (Neon), Prisma, Redis
+- Stripe billing, webhooks, ruoli e permessi granulari
+- Test end-to-end (Playwright), CI/CD Vercel
+- Riduzione tempi build del 35%, costi infra -28%
+
+Full-Stack Dev – Logistica SRL (2018–2021)
+- React/Node, ottimizzazione picking, reportistica real-time
+- Migrazione monolite → microservizi
+
+COMPETENZE
+- Frontend: Next.js/React, TypeScript, Tailwind
+- Backend: Node.js, Prisma, PostgreSQL, Redis
+- Cloud/DevOps: Vercel, Docker, GitHub Actions
+- Pagamenti: Stripe (Checkout, Portal, Webhook)
+
+FORMAZIONE
+- Laurea in Informatica – Politecnico di Milano`;
+}
+
+function sampleTextJD() {
+  return `Senior Full-Stack Developer (FinTech) – Milano (Ibrido)
+Responsabilità:
+- Next.js 14 (App Router), TypeScript, Tailwind
+- Stripe (checkout, portal, webhook)
+- PostgreSQL (Neon) + Prisma; caching Redis
+- CI/CD con Vercel, test E2E
+
+Requisiti:
+- 4+ anni in Next.js/React e Node
+- Esperienza reale con Stripe e webhook
+- Conoscenza di Prisma e PostgreSQL`;
+}
 
 function prettyError(msg: string) {
   if (/50 analisi mensili del piano pro/i.test(msg)) {
@@ -40,21 +81,29 @@ function prettyError(msg: string) {
 export default function Page() {
   const [resume, setResume] = useState('');
   const [jd, setJd] = useState('');
+  const [mode, setMode] = useState<Mode>('candidate');
+
   const [loading, setLoading] = useState(false);
   const [loadingExport, setLoadingExport] = useState<null | 'pdf' | 'docx'>(null);
   const [loadingCheckout, setLoadingCheckout] = useState<null | UiPlan>(null);
+
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalyzeResult | null>(null);
   const [remaining, setRemaining] = useState<number | 'infinite' | null>(null);
   const [plan, setPlan] = useState<UiPlan | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [mode, setMode] = useState<Mode>('candidate');
 
   const theme = mode === 'candidate'
     ? { accent: 'text-emerald-600', btn: 'bg-emerald-600 hover:bg-emerald-700', ring: 'focus:ring-emerald-500' }
     : { accent: 'text-indigo-600',  btn: 'bg-indigo-600 hover:bg-indigo-700',  ring: 'focus:ring-indigo-500' };
 
-  // Carica piano all’avvio in modo sicuro
+  // Prefill demo
+  useEffect(() => {
+    setResume(sampleTextCandidate());
+    setJd(sampleTextJD());
+  }, []);
+
+  // Carica piano utente (safe)
   useEffect(() => {
     (async () => {
       try {
@@ -69,7 +118,8 @@ export default function Page() {
 
   async function analyze() {
     setError(null);
-    if (!resume || !jd) { setError('Inserisci entrambi i campi.'); return; }
+    setResult(null);
+    if (!resume || !jd) { setError('Inserisci sia CV che Job Description.'); return; }
     setLoading(true);
     try {
       const body =
@@ -87,12 +137,10 @@ export default function Page() {
 
       setResult(data as AnalyzeResult);
       setRemaining(data?.remaining ?? null);
-      // se il server ritorna plan, normalizza
       if (data?.plan) setPlan(toUiPlan(data.plan));
       setRefreshKey((k) => k + 1);
     } catch (e: any) {
       setError(prettyError(e.message || 'Errore analisi'));
-      setRefreshKey((k) => k + 1);
     } finally {
       setLoading(false);
     }
@@ -116,16 +164,14 @@ export default function Page() {
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        throw new Error(prettyError(d?.error || 'Export failed'));
+        throw new Error(prettyError(d?.error || 'Export fallito'));
       }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = kind === 'pdf' ? 'CVBoost-report.pdf' : 'CVBoost-report.docx';
-      document.body.appendChild(a);
       a.click();
-      a.remove();
       URL.revokeObjectURL(url);
     } catch (e: any) {
       setError(prettyError(e.message || 'Errore export'));
@@ -136,7 +182,7 @@ export default function Page() {
 
   async function checkout(tier: UiPlan) {
     if (BUSINESS_PLUS_SOLD_OUT && tier === 'business_plus') {
-      setError('Business+ è attualmente esaurito. Torna presto!');
+      setError('Business+ al momento non disponibile.');
       return;
     }
     setLoadingCheckout(tier);
@@ -144,13 +190,7 @@ export default function Page() {
       const res = await fetch('/api/checkout/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tier,
-          successUrl: typeof window !== 'undefined'
-            ? window.location.origin + '/?checkout=success' : undefined,
-          cancelUrl: typeof window !== 'undefined'
-            ? window.location.href : undefined,
-        }),
+        body: JSON.stringify({ priceTier: tier }),
       });
       const data = await res.json();
       if (!data?.url) throw new Error('Checkout non disponibile');
@@ -163,191 +203,182 @@ export default function Page() {
   }
 
   return (
-    <MouseGlow mode={mode}>
-      <div className="min-h-screen bg-gray-50 text-gray-900">
-        {/* HEADER */}
-        <header className="relative bg-white border-b">
-          <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="font-extrabold text-xl">
-                CVBoost<span className={theme.accent}>.ai</span>
-              </div>
-              <PlanPill plan={plan} />
+    <div className="min-h-screen bg-neutral-950 text-white">
+      {/* HEADER */}
+      <header className="sticky top-0 z-30 bg-neutral-950/80 backdrop-blur border-b border-white/10">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="font-extrabold text-xl">
+              CVBoost<span className={theme.accent}>.ai</span>
             </div>
-            <HeaderAuth onAuthChange={({ me }) => {
-              setPlan(toUiPlan(me?.plan));
-              setRemaining(null);
-              setRefreshKey((k) => k + 1);
-            }} />
+            <PlanPill plan={plan} />
           </div>
+          <HeaderAuth onAuthChange={({ me }) => {
+            setPlan(toUiPlan(me?.plan));
+            setRemaining(null);
+            setRefreshKey((k) => k + 1);
+          }} />
+        </div>
 
-          <div className="max-w-5xl mx-auto px-4 pb-4">
-            <UsageCounter refreshKey={refreshKey} overrideRemaining={remaining} />
-          </div>
-        </header>
+        <div className="max-w-5xl mx-auto px-4 pb-4">
+          <UsageCounter refreshKey={refreshKey} overrideRemaining={remaining} />
+        </div>
+      </header>
 
-        {/* MAIN */}
-        <main className="max-w-5xl mx-auto px-4 py-8">
-          {/* Titolo + switch */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-            <motion.h1
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-3xl md:text-4xl font-bold"
-            >
-              Ottimizza il tuo <span className={theme.accent}>CV</span> per gli ATS in 60 secondi
-            </motion.h1>
-            <div className="flex justify-center md:justify-end">
-              <RoleSwitch mode={mode} onChange={setMode} />
-            </div>
-          </div>
+      {/* MAIN */}
+      <main className="max-w-5xl mx-auto px-4 py-8">
+        {/* Titolo + switch */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
+            Ottimizza il tuo <span className={theme.accent}>CV</span> contro la <span className={theme.accent}>Job Description</span>
+          </h1>
+          <RoleSwitch mode={mode} onChange={setMode} />
+        </div>
 
-          <p className="text-gray-600 mb-8 max-w-3xl">
-            {mode === 'candidate' ? (
-              <>Se stai <b>cercando lavoro</b>, incolla il tuo CV a sinistra e la Job Description a destra. Otterrai
-              <span className="font-semibold"> punteggio</span>,
-              <span className="font-semibold"> keyword mancanti</span>,
-              <span className="font-semibold"> CV riscritto</span> e cover letter.</>
-            ) : (
-              <>Se sei un <b>recruiter</b>, incolla l’<b>annuncio/descrizione del ruolo</b> a sinistra e, a destra,
-              un <b>CV di riferimento</b> (opzionale) o i requisiti chiave. Lo screening ATS confronterà i due testi.</>
-            )}
-          </p>
-
-          {/* Editor con glow */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-white rounded-2xl shadow p-4 border">
-              <label className="block text-sm font-semibold mb-2">
-                {mode === 'candidate' ? 'CV (testo) — per chi cerca lavoro' : 'Annuncio / Descrizione Ruolo — per recruiter'}
+        {/* INPUT */}
+        <div className="grid md:grid-cols-2 gap-6 mt-6">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-semibold opacity-90">
+                {mode === 'candidate' ? 'Il tuo CV (incolla testo)' : 'Job Description (incolla testo)'}
               </label>
-              <textarea
-                className={`w-full h-56 p-3 border rounded-xl focus:outline-none focus:ring-2 ${theme.ring}`}
-                placeholder={mode === 'candidate'
-                  ? 'Incolla qui il tuo CV in testo…'
-                  : 'Incolla qui il testo dell’annuncio/ruolo…'}
-                value={resume}
-                onChange={(e) => setResume(e.target.value)}
-              />
-              <div className="text-xs text-gray-500 mt-2">
-                {mode === 'candidate'
-                  ? 'Suggerimento: includi risultati numerici (%, €, tempo) per aumentare il punteggio.'
-                  : 'Suggerimento: specifica seniority, stack tecnologico, soft skills e must-have.'}
-              </div>
+              <button
+                className={`text-xs underline opacity-80 hover:opacity-100 ${theme.accent}`}
+                onClick={() => setResume(sampleTextCandidate())}
+              >
+                Carica esempio CV
+              </button>
             </div>
+            <textarea
+              value={resume}
+              onChange={(e) => setResume(e.target.value)}
+              rows={16}
+              className={`w-full rounded-xl bg-neutral-900 border border-white/10 p-3 outline-none focus:ring-2 ${theme.ring}`}
+              placeholder="Incolla qui il tuo CV in testo"
+            />
+          </div>
 
-            <div className="bg-white rounded-2xl shadow p-4 border">
-              <label className="block text-sm font-semibold mb-2">
-                {mode === 'candidate' ? 'Job Description' : 'CV di riferimento / Requisiti chiave'}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-semibold opacity-90">
+                {mode === 'candidate' ? 'Job Description (incolla testo)' : 'Il tuo CV (incolla testo)'}
               </label>
-              <textarea
-                className={`w-full h-56 p-3 border rounded-xl focus:outline-none focus:ring-2 ${theme.ring}`}
-                placeholder={mode === 'candidate'
-                  ? 'Incolla la JD del ruolo…'
-                  : 'Incolla un CV di riferimento o elenca i requisiti chiave…'}
-                value={jd}
-                onChange={(e) => setJd(e.target.value)}
-              />
-              <div className="text-xs text-gray-500 mt-2">
-                {mode === 'candidate'
-                  ? 'La JD viene confrontata con il tuo CV per identificare gap e suggerimenti.'
-                  : 'Se non hai un CV di riferimento, scrivi le competenze “ideali” per il ruolo.'}
-              </div>
+              <button
+                className={`text-xs underline opacity-80 hover:opacity-100 ${theme.accent}`}
+                onClick={() => setJd(sampleTextJD())}
+              >
+                Carica esempio JD
+              </button>
             </div>
+            <textarea
+              value={jd}
+              onChange={(e) => setJd(e.target.value)}
+              rows={16}
+              className={`w-full rounded-xl bg-neutral-900 border border-white/10 p-3 outline-none focus:ring-2 ${theme.ring}`}
+              placeholder="Incolla qui la Job Description in testo"
+            />
           </div>
+        </div>
 
-          <div className="mt-4 flex items-center gap-3">
-            <button
-              onClick={analyze}
-              disabled={loading}
-              className={`px-5 py-3 rounded-xl text-white font-semibold shadow hover:shadow-md disabled:opacity-60 ${theme.btn}`}
-            >
-              {loading ? 'Analisi in corso…' : (mode === 'candidate' ? 'Analizza CV' : 'Analizza annuncio')}
-            </button>
+        {/* AZIONI */}
+        <div className="flex items-center gap-3 mt-4">
+          <button
+            onClick={analyze}
+            disabled={loading}
+            className={`px-4 py-2 rounded-xl font-bold ${theme.btn} disabled:opacity-60`}
+          >
+            {loading ? 'Analisi in corso…' : 'Analizza'}
+          </button>
 
-            {plan !== 'business' && plan !== 'business_plus' && (
-              <span className="text-sm text-gray-500">
-                Gratis 3 Analisi • Passa a Pro: 50 Analisi Mensili • Passa a Business: Analisi Illimitate
-              </span>
-            )}
+          <button
+            onClick={() => exportFile('pdf')}
+            disabled={!result || !!loadingExport}
+            className="px-3 py-2 rounded-xl font-bold bg-neutral-800 hover:bg-neutral-700 disabled:opacity-60"
+          >
+            {loadingExport === 'pdf' ? 'Esporto PDF…' : 'Esporta PDF'}
+          </button>
+
+          <button
+            onClick={() => exportFile('docx')}
+            disabled={!result || !!loadingExport}
+            className="px-3 py-2 rounded-xl font-bold bg-neutral-800 hover:bg-neutral-700 disabled:opacity-60"
+          >
+            {loadingExport === 'docx' ? 'Esporto DOCX…' : 'Esporta DOCX'}
+          </button>
+        </div>
+
+        {/* ERRORI */}
+        {error && (
+          <div className="mt-4 p-3 rounded-xl bg-red-900/30 border border-red-500/40 text-red-200 text-sm">
+            {error}
           </div>
+        )}
 
-          {error && (
-            <div className="mt-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-xl">
-              {error}
+        {/* RISULTATI */}
+        {result && (
+          <section className="mt-8 grid gap-6">
+            <div className="rounded-2xl border border-white/10 p-4 bg-neutral-900">
+              <div className="text-sm opacity-80 font-semibold mb-1">Compatibilità</div>
+              <div className="text-4xl font-extrabold">{result.score}/100</div>
             </div>
-          )}
 
-          {result && (
-            <motion.section
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-8 grid md:grid-cols-3 gap-6"
-            >
-              <div className="bg-white rounded-2xl shadow p-4 border">
-                <div className="text-sm text-gray-500">Punteggio Match</div>
-                <div className={`text-4xl font-extrabold ${theme.accent}`}>{result.score}</div>
-                <div className="text-xs text-gray-500 mt-1">su 100</div>
-                <div className="mt-4">
-                  <div className="text-sm font-semibold mb-1">Keyword mancanti</div>
-                  <ul className="list-disc pl-5 text-sm text-gray-700">
-                    {result.missingKeywords?.length
-                      ? result.missingKeywords.map((k, i) => <li key={i}>{k}</li>)
-                      : <li>Nessuna keyword critica mancante 🎯</li>}
-                  </ul>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-2xl shadow p-4 border md:col-span-2">
-                <div className="text-sm font-semibold mb-2">Suggerimenti</div>
-                <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
-                  {result.suggestions?.map((s, i) => <li key={i}>{s}</li>)}
+            <div className="rounded-2xl border border-white/10 p-4 bg-neutral-900">
+              <div className="text-sm opacity-80 font-semibold mb-2">Keywords mancanti</div>
+              {result.missingKeywords.length ? (
+                <ul className="flex flex-wrap gap-2">
+                  {result.missingKeywords.map((kw, i) => (
+                    <li key={i} className="px-2 py-1 rounded-lg bg-neutral-800 border border-white/10 text-xs">{kw}</li>
+                  ))}
                 </ul>
+              ) : (
+                <div className="text-sm opacity-80">Nessuna keyword critica mancante. Ottimo!</div>
+              )}
+            </div>
 
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <button onClick={() => exportFile('pdf')} disabled={loadingExport==='pdf'}
-                          className="px-4 py-2 rounded-lg border shadow-sm hover:shadow disabled:opacity-60">
-                    {loadingExport==='pdf' ? 'Esporto PDF…' : 'Esporta PDF'}
-                  </button>
-                  <button onClick={() => exportFile('docx')} disabled={loadingExport==='docx'}
-                          className="px-4 py-2 rounded-lg border shadow-sm hover:shadow disabled:opacity-60">
-                    {loadingExport==='docx' ? 'Esporto DOCX…' : 'Esporta DOCX'}
-                  </button>
-                </div>
+            <div className="rounded-2xl border border-white/10 p-4 bg-neutral-900">
+              <div className="text-sm opacity-80 font-semibold mb-2">Suggerimenti</div>
+              <ul className="list-disc ml-5 text-sm space-y-1">
+                {result.suggestions.map((s, i) => <li key={i}>{s}</li>)}
+              </ul>
+            </div>
 
-                <div className="mt-4">
-                  <div className="text-sm font-semibold mb-1">Sezione CV riscritta</div>
-                  <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-3 rounded-xl border">
-{result.improvedResume}
-                  </pre>
-                </div>
+            <div className="rounded-2xl border border-white/10 p-4 bg-neutral-900">
+              <div className="text-sm opacity-80 font-semibold mb-2">CV riscritto (mirato alla JD)</div>
+              <pre className="whitespace-pre-wrap text-sm">{result.improvedResume}</pre>
+            </div>
 
-                <div className="mt-4">
-                  <div className="text-sm font-semibold mb-1">Cover letter generata</div>
-                  <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-3 rounded-xl border">
-{result.coverLetter}
-                  </pre>
-                </div>
-              </div>
-            </motion.section>
-          )}
+            <div className="rounded-2xl border border-white/10 p-4 bg-neutral-900">
+              <div className="text-sm opacity-80 font-semibold mb-2">Cover letter generata</div>
+              <pre className="whitespace-pre-wrap text-sm">{result.coverLetter}</pre>
+            </div>
+          </section>
+        )}
 
-          <LandingPitch
-            plan={plan}
-            onUpgrade={(tier) => {
-              if (tier === 'pro') return checkout('pro');
-              if (tier === 'business') return checkout('business');
-            }}
-          />
+        {/* CTA Piani */}
+        <LandingPitch
+          plan={plan}
+          onUpgrade={(tier) => {
+            if (tier === 'pro') return checkout('pro');
+            if (tier === 'business') return checkout('business');
+          }}
+        />
 
-          <ValueSection
-            plan={plan}
-            onUpgrade={(tier) => {
-              if (tier === 'pro') return checkout('pro');
-              if (tier === 'business') return checkout('business');
-            }}
-          />
-        </main>
-      </div>
-    </MouseGlow>
+        <ValueSection
+          plan={plan}
+          disabledPlus={BUSINESS_PLUS_SOLD_OUT}
+          loading={loadingCheckout}
+          onBuy={(tier) => checkout(tier as UiPlan)}
+          onUpgrade={(tier) => {
+            if (tier === 'pro') return checkout('pro');
+            if (tier === 'business') return checkout('business');
+          }}
+        />
+      </main>
+
+      {/* FOOTER */}
+      <footer className="border-t border-white/10 mt-12 py-6 text-center text-xs opacity-70">
+        © {new Date().getFullYear()} CVBoost.ai — Tutti i diritti riservati
+      </footer>
+    </div>
   );
 }
