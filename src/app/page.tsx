@@ -8,7 +8,6 @@ import UsageCounter from '@/components/UsageCounter';
 import PlanPill from '@/components/PlanPill';
 import LandingPitch from '@/components/LandingPitch';
 import ValueSection from '@/components/ValueSection';
-
 // ✅ Manteniamo RoleSwitch (niente glow)
 import RoleSwitch, { type Mode } from '@/components/RoleSwitch';
 
@@ -19,6 +18,21 @@ type AnalyzeResult = {
   improvedResume: string;
   coverLetter: string;
 };
+
+type UiPlan = 'free' | 'pro' | 'business' | 'business_plus';
+
+// Normalizza qualsiasi valore “plan” in un UiPlan valido (fallback: 'free')
+function toUiPlan(input: unknown): UiPlan {
+  switch (input) {
+    case 'free':
+    case 'pro':
+    case 'business':
+    case 'business_plus':
+      return input;
+    default:
+      return 'free';
+  }
+}
 
 const BUSINESS_PLUS_SOLD_OUT = true;
 
@@ -39,7 +53,7 @@ export default function Page() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalyzeResult | null>(null);
   const [remaining, setRemaining] = useState<number | 'infinite' | null>(null);
-  const [plan, setPlan] = useState<'free' | 'pro' | 'business' | 'business_plus' | null>(null);
+  const [plan, setPlan] = useState<UiPlan | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   // modalità d’uso (verde/viola)
@@ -56,7 +70,7 @@ export default function Page() {
       try {
         const r = await fetch('/api/auth/me', { cache: 'no-store' });
         const j = await r.json();
-        setPlan(j?.plan ?? 'free');
+        setPlan(toUiPlan(j?.plan));
       } catch {
         setPlan('free');
       }
@@ -83,7 +97,7 @@ export default function Page() {
       if (!res.ok) throw new Error(prettyError(data?.error || 'Errore analisi'));
       setResult(data as AnalyzeResult);
       setRemaining(data?.remaining ?? null);
-      setPlan(data?.plan ?? plan ?? null);
+      setPlan(toUiPlan(data?.plan));
       setRefreshKey((k) => k + 1);
     } catch (e: any) {
       setError(prettyError(e.message || 'Errore analisi'));
@@ -162,11 +176,14 @@ export default function Page() {
             </div>
             <PlanPill plan={plan} />
           </div>
-          <HeaderAuth onAuthChange={({ me }) => {
-            setPlan(me.plan);
-            setRemaining(null);
-            setRefreshKey((k) => k + 1);
-          }} />
+          <HeaderAuth
+            onAuthChange={({ me }) => {
+              // 🔒 Tip-safe: normalizziamo il piano
+              setPlan(toUiPlan(me?.plan));
+              setRemaining(null);
+              setRefreshKey((k) => k + 1);
+            }}
+          />
         </div>
 
         <div className="max-w-5xl mx-auto px-4 pb-4">
