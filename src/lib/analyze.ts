@@ -19,21 +19,38 @@ export type AnalyzeOutput = {
   coverLetter: string;
 };
 
+// Definizione **permissiva**: alcuni campi nel JSON possono mancare
 type DomainDef = {
   name: string;
-  profile: string;
-  signals: string[];
-  kpis: string[];
+  profile?: string;
+  signals?: string[];
+  kpis?: string[];
   dict: Record<string, string[]>;
 };
 
 type SkillsJson = {
-  version: string;
-  locale: string;
-  domains: DomainDef[];
+  version?: string;
+  locale?: string;
+  domains?: unknown;
 };
 
-const DOMAINS: DomainDef[] = (skillsIT as SkillsJson).domains;
+// ---------- Caricamento dizionario (safe) ----------
+function safeArray<T = unknown>(v: unknown): T[] {
+  return Array.isArray(v) ? (v as T[]) : [];
+}
+function safeRecord(v: unknown): Record<string, string[]> {
+  if (v && typeof v === "object" && !Array.isArray(v)) return v as Record<string, string[]>;
+  return {};
+}
+
+const RAW = skillsIT as SkillsJson;
+const DOMAINS: DomainDef[] = safeArray<any>(RAW?.domains).map((d) => ({
+  name: String(d?.name ?? "generic"),
+  profile: typeof d?.profile === "string" ? d.profile : undefined,
+  signals: safeArray<string>(d?.signals),
+  kpis: safeArray<string>(d?.kpis),
+  dict: safeRecord(d?.dict),
+}));
 
 // ---------- Utils base ----------
 function baseNorm(s: string) {
@@ -119,7 +136,7 @@ function detectDomain(jd: string): string {
   let best = { name: "generic", score: 0 };
   for (const dom of DOMAINS) {
     let score = 0;
-    for (const s of dom.signals) if (J.includes(norm(s))) score += 2;
+    for (const s of dom.signals ?? []) if (J.includes(norm(s))) score += 2;
     for (const vars of Object.values(dom.dict)) if (containsAny(J, vars)) score += 1;
     if (score > best.score) best = { name: dom.name, score };
   }
@@ -256,7 +273,7 @@ function suggestionsFor(domain: string, present: string[], missing: string[]) {
   }
 
   if (def?.kpis?.length) {
-    sug.push(`Quantifica i risultati con KPI rilevanti (${def.kpis.slice(0, 4).join(", ")}).`);
+    sug.push(`Quantifica i risultati con KPI rilevanti (${(def.kpis ?? []).slice(0, 4).join(", ")}).`);
   }
 
   if (domain === "logistics") {
@@ -287,8 +304,9 @@ function rewriteCV(domain: string, present: string[], missing: string[]) {
   const keep = present.slice(0, 8).map((k) => `• Esperienza in ${k}.`).join("\n");
   const add = missing.slice(0, 8).map((k) => `• Allineamento/attestato da sviluppare in ${k}.`).join("\n");
 
-  const kpiBlock = def?.kpis?.length
-    ? "RISULTATI (esempi)\n• " + def.kpis.slice(0, 4).join("\n• ")
+  const kpiList = (def?.kpis ?? []).slice(0, 4);
+  const kpiBlock = kpiList.length
+    ? "RISULTATI (esempi)\n• " + kpiList.join("\n• ")
     : "RISULTATI (esempi)\n• Aggiungi numeri concreti (%, €, tempo).";
 
   return [
