@@ -1,8 +1,8 @@
 // src/components/ValueSection.tsx
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { CheckCircle, Shield, Wand2, Zap, Filter, Target, MousePointerClick, CheckCircle2 } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Shield, Wand2, Zap, Filter, Target, MousePointerClick, CheckCircle2, CheckCircle } from 'lucide-react';
 
 // ---- Tipi
 type Plan = 'free' | 'pro' | 'business' | 'business_plus' | 'unknown';
@@ -27,19 +27,7 @@ export default function ValueSection({
   plan: Plan;
   onUpgrade?: (tier: 'pro' | 'business') => void;
 }) {
-  // Stato spotlight
-  const sectionRef = useRef<HTMLDivElement | null>(null);
-  const [spot, setSpot] = useState({ x: 50, y: 50 });
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-    const onMove = (e: MouseEvent) => {
-      const r = el.getBoundingClientRect();
-      setSpot({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 });
-    };
-    el.addEventListener('mousemove', onMove);
-    return () => el.removeEventListener('mousemove', onMove);
-  }, []);
+  // ❌ RIMOSSO: ref + listener mouse + spotlight
 
   // Demo candidato
   const [cv, setCv] = useState('Esperienza: React, TypeScript, Node, PostgreSQL. Gestione progetti Agile.');
@@ -83,12 +71,8 @@ export default function ValueSection({
   const isFree = !proActive && !businessActive;
 
   return (
-    <section ref={sectionRef} className="relative overflow-hidden rounded-3xl border bg-gradient-to-b from-white to-slate-50/60 shadow-sm mt-16">
-      {/* Spotlight che segue il mouse */}
-      <div
-        className="pointer-events-none absolute inset-0 transition-opacity duration-300"
-        style={{ background: `radial-gradient(600px circle at ${spot.x}% ${spot.y}%, rgba(99,102,241,0.15), transparent 40%)` }}
-      />
+    <section className="relative overflow-hidden rounded-3xl border bg-gradient-to-b from-white to-slate-50/60 shadow-sm mt-16">
+      {/* ❌ RIMOSSO: overlay con radial-gradient che seguiva il mouse */}
 
       <div className="relative px-6 py-12 md:px-10 lg:px-16">
         {/* Header testo */}
@@ -96,14 +80,15 @@ export default function ValueSection({
           <p className="inline-flex items-center gap-2 text-sm font-medium text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
             <Shield className="w-4 h-4" /> Affinità CV ↔ Job & Screening veloce
           </p>
-          <h2 className="text-2xl md:text-4xl font-bold mt-3 leading-tight">
-            Mostra il <span className="text-indigo-600">valore</span> prima di inviare:
-            verifica l'affinità, colma i gap e accelera lo screening.
-          </h2>
-          <p className="text-slate-600 mt-3">
-            Mini-demo per capire come CVBoost.ai ragiona: punteggi 1–100, keyword mancanti e shortlist automatica.
-          </p>
         </div>
+
+        <h2 className="text-2xl md:text-4xl font-bold mt-3 leading-tight text-center">
+          Mostra il <span className="text-indigo-600">valore</span> prima di inviare:
+          verifica l'affinità, colma i gap e accelera lo screening.
+        </h2>
+        <p className="text-slate-600 mt-3 text-center">
+          Mini-demo per capire come CVBoost.ai ragiona: punteggi 1–100, keyword mancanti e shortlist automatica.
+        </p>
 
         {/* Doppia colonna */}
         <div className="grid lg:grid-cols-2 gap-8 mt-10">
